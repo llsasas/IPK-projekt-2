@@ -78,7 +78,6 @@ int create_socket(int type)
     if (type)
     {
         int type = SOCK_STREAM;
-        int welcome_socket = socket(family, type, 0);
         return socket(family, type, 0);
     }
     else
@@ -128,6 +127,7 @@ void tcp_communication(int socketn)
     struct sockaddr *comm_addr;
     socklen_t comm_addr_size;
     bool error = false;
+    bool hello = true;
     while (true)
     {
         int comm_socket = accept(socketn, comm_addr, &comm_addr_size);
@@ -142,6 +142,13 @@ void tcp_communication(int socketn)
                 error = true;
                 break;
             }
+            if (hello)
+            {
+                if(!strcmp(buffer, "HELLO"))
+                {
+                    strcpy(buffer, "HELLO");
+                }
+            }
             int bytes_tx = send(comm_socket, buffer, strlen(buffer), flags);
             if (bytes_tx <= 0)
             {
@@ -151,12 +158,12 @@ void tcp_communication(int socketn)
             }
         }
         shutdown(comm_socket, SHUT_RDWR);
-        if(close(comm_socket) < 0)
+        if (close(comm_socket) < 0)
         {
             perror("Error: close socket");
             exit(EXIT_FAILURE);
         }
-        if(error)
+        if (error)
         {
             exit(EXIT_FAILURE);
         }
@@ -164,6 +171,26 @@ void tcp_communication(int socketn)
     }
 }
 
+void udp_communication(int socketn)
+{
+    struct sockaddr_in client_addr;
+    socklen_t addr_size = sizeof(client_addr);
+    struct sockaddr *addr = (struct sockaddr *)&client_addr;
+    char buffer[BUFSIZE];
+    while (1)
+    {
+        int bytes_rx = recvfrom(socketn, buffer, BUFSIZE, 0, addr, &addr_size);
+        if (bytes_rx < 0)
+        {
+            perror("ERROR: recvfrom");
+        }
+        int bytes_tx = sendto(socketn, buffer, strlen(buffer), 0, addr, addr_size);
+        if (bytes_tx < 0)
+        {
+            perror("ERROR: sendto");
+        }
+    }
+}
 
 int main(int argc, const char *argv[])
 {
@@ -182,6 +209,11 @@ int main(int argc, const char *argv[])
     {
         perror("Error: socket");
         return (EXIT_FAILURE);
+    }
+    if (mode)
+    {
+        int enable = 1;
+        setsockopt(socket_f, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
     }
 
     return 0;
