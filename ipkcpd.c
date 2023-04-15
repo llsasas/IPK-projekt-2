@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/socket.h>
 
 
 int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
@@ -63,14 +64,28 @@ int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
     {
         return 1;
     }
+    return 0;
+}
+
+// Type defines whether we use TCP(1) or UDP(0)
+int create_socket(int type)
+{
+    int family = AF_INET;
+    if(type)
+    {
+        int type = SOCK_STREAM;
+        return socket(family, type, 0);
+    }
     else
     {
-        return 0;
+        int type = SOCK_DGRAM;
+        return socket(family, type, 0);
     }
 }
 
+
 int main(int argc, const char *argv[])
 {
-    
+
     return 0;
 }
