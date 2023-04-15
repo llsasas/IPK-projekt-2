@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
@@ -94,18 +95,40 @@ void check_portnumber(int port_n)
     }
 }
 
+void fnc_bind(int prtnum, int socket_n)
+{
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_port = htons(prtnum);
+    struct sockaddr *address = (struct sockaddr *)&server_addr;
+    int address_size = sizeof(server_addr);
+    if (bind(socket_n, &address, address_size) < 0)
+    {
+        perror("ERROR: bind");
+        exit(EXIT_FAILURE);
+    }
+}
 int main(int argc, const char *argv[])
 {
     const char *server_hostname;
     int h = 0;
     int p = 0;
     int m = 0;
-    int portnumber,socket_f;
+    int portnumber, socket_f;
     int mode = !strcmp(argv[m], "tcp");
     arguments_check(argc, argv, &h, &p, &m);
     portnumber = atoi(argv[p]);
     server_hostname = argv[h];
     check_portnumber(portnumber);
     socket_f = create_socket(mode);
+    if (socket_f <= 0)
+    {
+        perror("Error: socket");
+        return (EXIT_FAILURE);
+    }
+    
+
     return 0;
 }
