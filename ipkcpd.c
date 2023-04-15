@@ -10,15 +10,15 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 
-
-int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
+void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
     bool swp = false;
     bool swh = false;
     bool swm = false;
     if (argn != 7)
     {
-        return 1;
+        perror('Usage: ipkcpc -h <host> -p <port> -m <mode>\n');
+        exit(EXIT_FAILURE);
     }
     for (int i = 1; i < 7; i++)
     {
@@ -27,7 +27,7 @@ int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
             *h = i + 1;
             if (swm == true && swp == true)
             {
-                return 0;
+                return;
             }
             swh = true;
             continue;
@@ -37,7 +37,7 @@ int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
             *p = i + 1;
             if (swh == true && swm == true)
             {
-                return 0;
+                return;
             }
             else
             {
@@ -52,28 +52,30 @@ int arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
                 *m = i + 1;
                 swm = true;
                 if (swh == true && swp == true)
-                    return 0;
+                    return;
             }
             else
             {
-                return 1;
+                exit(EXIT_FAILURE);
             }
         }
     }
     if (swh != true || swp != true || swm != true)
     {
-        return 1;
+        perror('Usage: ipkcpc -h <host> -p <port> -m <mode>\n');
+        exit(EXIT_FAILURE);
     }
-    return 0;
+    return;
 }
 
 // Type defines whether we use TCP(1) or UDP(0)
-int create_socket(int type)
+void create_socket(int type)
 {
     int family = AF_INET;
-    if(type)
+    if (type)
     {
         int type = SOCK_STREAM;
+        int welcome_socket = socket(family, type, 0);
         return socket(family, type, 0);
     }
     else
@@ -85,7 +87,7 @@ int create_socket(int type)
 
 void check_portnumber(int port_n)
 {
-    if(port_n > 65535 || port_n < 0)
+    if (port_n > 65535 || port_n < 0)
     {
         perror('Error: port number out of range');
         exit(EXIT_FAILURE);
@@ -94,6 +96,10 @@ void check_portnumber(int port_n)
 
 int main(int argc, const char *argv[])
 {
-
+    int h = 0;
+    int p = 0;
+    int m = 0;
+    int portnumber;
+    arguments_check(argc, argv, &h, &p, &m);
     return 0;
 }
