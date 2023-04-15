@@ -69,7 +69,7 @@ void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 }
 
 // Type defines whether we use TCP(1) or UDP(0)
-void create_socket(int type)
+int create_socket(int type)
 {
     int family = AF_INET;
     if (type)
@@ -96,10 +96,16 @@ void check_portnumber(int port_n)
 
 int main(int argc, const char *argv[])
 {
+    const char *server_hostname;
     int h = 0;
     int p = 0;
     int m = 0;
-    int portnumber;
+    int portnumber,socket_f;
+    int mode = !strcmp(argv[m], "tcp");
     arguments_check(argc, argv, &h, &p, &m);
+    portnumber = atoi(argv[p]);
+    server_hostname = argv[h];
+    check_portnumber(portnumber);
+    socket_f = create_socket(mode);
     return 0;
 }
