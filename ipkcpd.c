@@ -83,6 +83,14 @@ int create_socket(int type)
     }
 }
 
+void check_portnumber(int port_n)
+{
+    if(port_n > 65535 || port_n < 0)
+    {
+        perror('Error: port number out of range');
+        exit(EXIT_FAILURE);
+    }
+}
 
 int main(int argc, const char *argv[])
 {
