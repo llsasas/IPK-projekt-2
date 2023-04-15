@@ -110,6 +110,17 @@ void fnc_bind(int prtnum, int socket_n)
         exit(EXIT_FAILURE);
     }
 }
+
+void listenfnc(int socketn)
+{
+    int max_waiting_connections = 1;
+    if (listen(socketn, max_waiting_connections) < 0)
+    {
+        perror("ERROR: listen");
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, const char *argv[])
 {
     const char *server_hostname;
@@ -128,7 +139,6 @@ int main(int argc, const char *argv[])
         perror("Error: socket");
         return (EXIT_FAILURE);
     }
-    
 
     return 0;
 }
