@@ -11,6 +11,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#define BUFSIZE 512
+
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
     bool swp = false;
@@ -120,6 +122,48 @@ void listenfnc(int socketn)
         exit(EXIT_FAILURE);
     }
 }
+
+void tcp_communication(int socketn)
+{
+    struct sockaddr *comm_addr;
+    socklen_t comm_addr_size;
+    bool error = false;
+    while (true)
+    {
+        int comm_socket = accept(socketn, comm_addr, &comm_addr_size);
+        if (comm_socket > 0)
+        {
+            char buffer[BUFSIZE];
+            int flags = 0;
+            int bytes_rx = recv(comm_socket, buffer, BUFSIZE, flags);
+            if (bytes_rx <= 0)
+            {
+                perror("Error occurred: recv");
+                error = true;
+                break;
+            }
+            int bytes_tx = send(comm_socket, buffer, strlen(buffer), flags);
+            if (bytes_tx <= 0)
+            {
+                perror("Error occurred: send");
+                error = true;
+                break;
+            }
+        }
+        shutdown(comm_socket, SHUT_RDWR);
+        if(close(comm_socket) < 0)
+        {
+            perror("Error: close socket");
+            exit(EXIT_FAILURE);
+        }
+        if(error)
+        {
+            exit(EXIT_FAILURE);
+        }
+        exit(EXIT_SUCCESS);
+    }
+}
+
 
 int main(int argc, const char *argv[])
 {
