@@ -17,25 +17,22 @@
 
 #define BUFSIZE 512
 
-typedef struct {
-    char data[100];
-    int top;
-} Stack;
-
-void push(Stack* s, char ch) {
-    s->top++;
-    s->data[s->top] = ch;
+int is_operator(char ch)
+{
+    switch (ch)
+    {
+    case '+':
+        return 1;
+    case '-':
+        return 1;
+    case '*':
+        return 1;
+    case '/':
+        return 1;
+    }
+    return 0;
 }
 
-char pop(Stack* s) {
-    char ch = s->data[s->top];
-    s->top--;
-    return ch;
-}
-
-int is_operator(char ch) {
-    return (ch == '+' || ch == '-' || ch == '*' || ch == '/');
-}
 
 
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
@@ -147,7 +144,6 @@ void listenfnc(int socketn)
     }
 }
 
-
 void tcp_communication(int socketn)
 {
     struct sockaddr *comm_addr;
@@ -187,7 +183,6 @@ void tcp_communication(int socketn)
                     }
                     else if (!strncmp(message, "SOLVE ", 6))
                     {
-                     
                     }
                     // Send response
                     int bytes_tx = send(comm_socket, response, strlen(response), flags);
