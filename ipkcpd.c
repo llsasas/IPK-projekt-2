@@ -10,8 +10,33 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <unistd.h>
+#include <math.h>
+#include <ctype.h>
 
 #define BUFSIZE 512
+
+typedef struct {
+    char data[100];
+    int top;
+} Stack;
+
+void push(Stack* s, char ch) {
+    s->top++;
+    s->data[s->top] = ch;
+}
+
+char pop(Stack* s) {
+    char ch = s->data[s->top];
+    s->top--;
+    return ch;
+}
+
+int is_operator(char ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/');
+}
+
 
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
@@ -20,7 +45,7 @@ void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
     bool swm = false;
     if (argn != 7)
     {
-        perror('Usage: ipkcpc -h <host> -p <port> -m <mode>\n');
+        perror("Usage: ipkcpc -h <host> -p <port> -m <mode>\n");
         exit(EXIT_FAILURE);
     }
     for (int i = 1; i < 7; i++)
@@ -65,7 +90,7 @@ void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
     }
     if (swh != true || swp != true || swm != true)
     {
-        perror('Usage: ipkcpc -h <host> -p <port> -m <mode>\n');
+        perror("Usage: ipkcpc -h <host> -p <port> -m <mode>\n");
         exit(EXIT_FAILURE);
     }
     return;
@@ -91,7 +116,7 @@ void check_portnumber(int port_n)
 {
     if (port_n > 65535 || port_n < 0)
     {
-        perror('Error: port number out of range');
+        perror("Error: port number out of range");
         exit(EXIT_FAILURE);
     }
 }
@@ -105,7 +130,7 @@ void fnc_bind(int prtnum, int socket_n)
     server_addr.sin_port = htons(prtnum);
     struct sockaddr *address = (struct sockaddr *)&server_addr;
     int address_size = sizeof(server_addr);
-    if (bind(socket_n, &address, address_size) < 0)
+    if (bind(socket_n, (struct sockaddr *)&address, address_size) < 0)
     {
         perror("ERROR: bind");
         exit(EXIT_FAILURE);
@@ -122,39 +147,62 @@ void listenfnc(int socketn)
     }
 }
 
+
 void tcp_communication(int socketn)
 {
     struct sockaddr *comm_addr;
     socklen_t comm_addr_size;
     bool error = false;
-    bool hello = true;
+    char buffer[BUFSIZE];
+    char response[BUFSIZE];
+    int buffer_len = 0;
     while (true)
     {
         int comm_socket = accept(socketn, comm_addr, &comm_addr_size);
         if (comm_socket > 0)
         {
-            char buffer[BUFSIZE];
             int flags = 0;
-            int bytes_rx = recv(comm_socket, buffer, BUFSIZE, flags);
+            int bytes_rx = recv(comm_socket, buffer + buffer_len, BUFSIZE - buffer_len, flags);
             if (bytes_rx <= 0)
             {
                 perror("Error occurred: recv");
                 error = true;
                 break;
             }
-            if (hello)
+            buffer_len += bytes_rx;
+            if (strchr(buffer, '\n') != NULL)
             {
-                if(!strcmp(buffer, "HELLO"))
+                // Complete message received
+                char *message = strtok(buffer, "\n");
+                while (message != NULL)
                 {
-                    strcpy(buffer, "HELLO");
+                    // Process message
+                    if (strcmp(message, "HELLO") == 0)
+                    {
+                        strcpy(response, "HELLO\n");
+                    }
+                    else if (strcmp(message, "BYE") == 0)
+                    {
+                        strcpy(response, "BYE\n");
+                    }
+                    else if (!strncmp(message, "SOLVE ", 6))
+                    {
+                     
+                    }
+                    // Send response
+                    int bytes_tx = send(comm_socket, response, strlen(response), flags);
+                    if (bytes_tx <= 0)
+                    {
+                        perror("Error occurred: send");
+                        error = true;
+                        break;
+                    }
+                    // Get next message
+                    message = strtok(NULL, "\n");
                 }
-            }
-            int bytes_tx = send(comm_socket, buffer, strlen(buffer), flags);
-            if (bytes_tx <= 0)
-            {
-                perror("Error occurred: send");
-                error = true;
-                break;
+                // Move remaining data to the beginning of buffer
+                buffer_len = strlen(message);
+                memmove(buffer, message, buffer_len);
             }
         }
         shutdown(comm_socket, SHUT_RDWR);
@@ -167,7 +215,6 @@ void tcp_communication(int socketn)
         {
             exit(EXIT_FAILURE);
         }
-        exit(EXIT_SUCCESS);
     }
 }
 
