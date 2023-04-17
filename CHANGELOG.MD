@@ -1,0 +1,5 @@
+# Changelog - IPK 2. Project
+## Samuel Čus (xcussa00)
+
+### Description of the programme 
+First thing the programme does is read the arguments and check them if they are typed in the correct order. Then we retrieve the arguments into variables. The user decides whether UDP or TCP protocol is gonna be used. Both TCP and UDP are implemented in accordance with the explanation in the documentation(README.md). There are several additional functions in the programme. For example function ctrlc() is used for handling the CTRL C during TCP transmission. During the run of the programme there are several checks made in order to prevent some unwanted behaviour like to check the range of port, arguments check, received data check etc. If errors occur during the programme, the programme is shutted down, returns 1 and error messages are printed to standard error output. The messages from server are printed on standard output and if everything is the way it should be, it returns 0. The programme is not multiplatform. It is created to run only on the Linux OS, Windows is not supported. 
