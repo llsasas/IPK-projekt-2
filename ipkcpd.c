@@ -5,6 +5,7 @@
  * @date 2023-04-15
  */
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -16,6 +17,11 @@
 #include <ctype.h>
 
 #define BUFSIZE 512
+
+#define MAX_STACK_SIZE 100
+
+int stack[MAX_STACK_SIZE];
+int top = -1;
 
 int is_operator(char ch)
 {
@@ -34,6 +40,31 @@ int is_operator(char ch)
 }
 
 
+void push(int item)
+{
+    if (top >= MAX_STACK_SIZE - 1)
+    {
+        printf("Error: Stack overflow\n");
+        exit(0);
+    }
+    else
+    {
+        stack[++top] = item;
+    }
+}
+
+int pop()
+{
+    if (top < 0)
+    {
+        printf("Error: Stack underflow\n");
+        exit(0);
+    }
+    else
+    {
+        return stack[top--];
+    }
+}
 
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
@@ -81,6 +112,7 @@ void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
             }
             else
             {
+                perror("Usage: ipkcpc -h <host> -p <port> -m <mode>\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -125,9 +157,7 @@ void fnc_bind(int prtnum, int socket_n)
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(prtnum);
-    struct sockaddr *address = (struct sockaddr *)&server_addr;
-    int address_size = sizeof(server_addr);
-    if (bind(socket_n, (struct sockaddr *)&address, address_size) < 0)
+    if (bind(socket_n, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("ERROR: bind");
         exit(EXIT_FAILURE);
@@ -144,35 +174,51 @@ void listenfnc(int socketn)
     }
 }
 
-void tcp_communication(int socketn)
+void tcp_communication(int socketn, int prtnum)
 {
-    struct sockaddr *comm_addr;
-    socklen_t comm_addr_size;
+    perror("273");
+    struct sockaddr_in comm_addr;
+    socklen_t comm_addr_size = sizeof(comm_addr);
     bool error = false;
     char buffer[BUFSIZE];
     char response[BUFSIZE];
     int buffer_len = 0;
+    int flags = 0;
+
     while (true)
     {
-        int comm_socket = accept(socketn, comm_addr, &comm_addr_size);
-        if (comm_socket > 0)
+        perror("283");
+        int comm_socket = accept(socketn, (struct sockaddr *)&comm_addr, &comm_addr_size);
+        if (comm_socket < 0)
         {
-            int flags = 0;
-            int bytes_rx = recv(comm_socket, buffer + buffer_len, BUFSIZE - buffer_len, flags);
+            perror("286");
+            error = true;
+            break;
+        }
+        perror("290");
+        while (true)
+        {
+            int bytes_rx = recv(comm_socket, buffer, BUFSIZE, flags);
             if (bytes_rx <= 0)
             {
                 perror("Error occurred: recv");
                 error = true;
                 break;
             }
+            perror("298");
+
             buffer_len += bytes_rx;
+
             if (strchr(buffer, '\n') != NULL)
             {
                 // Complete message received
+                perror("302");
                 char *message = strtok(buffer, "\n");
+
                 while (message != NULL)
                 {
                     // Process message
+
                     if (strcmp(message, "HELLO") == 0)
                     {
                         strcpy(response, "HELLO\n");
@@ -183,6 +229,23 @@ void tcp_communication(int socketn)
                     }
                     else if (!strncmp(message, "SOLVE ", 6))
                     {
+                        int result = evaluate_prefix_expression(extract_substring(message));
+                        perror("314 ");
+                        printf("%d \n", result);
+                        if (result == -1)
+                        {
+                            perror("Error occurred: evaluating expression");
+                            error = true;
+                            strcpy(response, "BYE\n");
+                            break;
+                        }
+                        sprintf(response, "RESULT %d\n", result);
+                    }
+                    else
+                    {
+                        perror("Invalid message sent");
+                        strcpy(response, "BYE\n");
+                        error = true;
                     }
                     // Send response
                     int bytes_tx = send(comm_socket, response, strlen(response), flags);
@@ -192,24 +255,34 @@ void tcp_communication(int socketn)
                         error = true;
                         break;
                     }
-                    // Get next message
-                    message = strtok(NULL, "\n");
+
+                    break;
                 }
+
                 // Move remaining data to the beginning of buffer
-                buffer_len = strlen(message);
-                memmove(buffer, message, buffer_len);
+                if (error)
+                {
+                    break;
+                }
             }
         }
+
         shutdown(comm_socket, SHUT_RDWR);
         if (close(comm_socket) < 0)
         {
             perror("Error: close socket");
             exit(EXIT_FAILURE);
         }
+
         if (error)
         {
-            exit(EXIT_FAILURE);
+            break;
         }
+    }
+    perror("367");
+    if (error)
+    {
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -218,20 +291,45 @@ void udp_communication(int socketn)
     struct sockaddr_in client_addr;
     socklen_t addr_size = sizeof(client_addr);
     struct sockaddr *addr = (struct sockaddr *)&client_addr;
-    char buffer[BUFSIZE];
+    char buff[BUFSIZE];
+    char send[BUFSIZE];
+    char out[BUFSIZE];
     while (1)
     {
-        int bytes_rx = recvfrom(socketn, buffer, BUFSIZE, 0, addr, &addr_size);
+        int bytes_rx = recvfrom(socketn, buff, BUFSIZE, 0, addr, &addr_size);
         if (bytes_rx < 0)
         {
             perror("ERROR: recvfrom");
+            error = true;
+            break;
         }
+        if ((bufffer[0]) != 0)
+        {
+            perror("Error occurred: response from client");
+            error = true;
+            break;
+        }
+        int result = evaluate_prefix_expression(buff + 3);
+        sprintf(response, "RESULT %d\n", result);
+        out[0] = '4';
+        out[1] = '\0';
+        send[0] = 1;
+        send[1] = 0;
+        send[2] = 1;
+        strcat(sendBuff + 3, outBuff);
         int bytes_tx = sendto(socketn, buffer, strlen(buffer), 0, addr, addr_size);
         if (bytes_tx < 0)
         {
             perror("ERROR: sendto");
+            error = true;
+            break;
         }
     }
+    if (error)
+    {
+        exit(EXIT_FAILURE);
+    }
+    exit(0)
 }
 
 int main(int argc, const char *argv[])
@@ -241,8 +339,9 @@ int main(int argc, const char *argv[])
     int p = 0;
     int m = 0;
     int portnumber, socket_f;
-    int mode = !strcmp(argv[m], "tcp");
+    perror("396");
     arguments_check(argc, argv, &h, &p, &m);
+    int mode = !strcmp(argv[m], "tcp");
     portnumber = atoi(argv[p]);
     server_hostname = argv[h];
     check_portnumber(portnumber);
@@ -252,10 +351,16 @@ int main(int argc, const char *argv[])
         perror("Error: socket");
         return (EXIT_FAILURE);
     }
-    if (mode)
+    if (true)
     {
+        perror("423");
         int enable = 1;
         setsockopt(socket_f, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
+        fnc_bind(portnumber, socket_f);
+        listenfnc(socket_f);
+        perror("414");
+        tcp_communication(socket_f, portnumber);
+        perror("430");
     }
 
     return 0;
