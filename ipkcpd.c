@@ -52,11 +52,9 @@ int perform_operation(char operation, int operand1, int operand2)
     case '/':
         return operand1 / operand2;
     default:
-        printf("Error: Invalid operator\n");
-        exit(0);
+        return -1;
     }
 }
-
 
 void push(int item)
 {
@@ -82,6 +80,87 @@ int pop()
     {
         return stack[top--];
     }
+}
+int evaluate_prefix_expression(char *expr)
+{
+    int i, operand1, operand2, result, oper;
+    char c;
+    int cnt = 0;
+    bool sw = false;
+    for (i = strlen(expr) - 1; i >= 0; i--)
+    {
+        c = expr[i];
+        if (isdigit(c))
+        {
+            push(c - '0');
+        }
+        else if (is_operator(c))
+        {
+            push(c);
+        }
+        else if (c == ')')
+        {
+            cnt++;
+            push(c);
+        }
+        else if (c == '(')
+        {
+            while (true)
+            {
+                if (!sw)
+                {
+                    oper = pop();
+                    sw = true;
+                }
+                operand2 = pop();
+                operand1 = pop();
+                result = perform_operation(oper, operand1, operand2); // odstranit operátor z vrcholu zásobníku
+                if (stack[top] == ')')
+                {
+                    pop();
+                    cnt--;
+                }
+                push(result); // výsledek uložit zpět na zásobník
+                if (cnt == 0)
+                {
+                    break;
+                }
+                c = stack[top - 1] + '0';
+
+                while (isdigit(c))
+                {
+                    operand2 = pop();
+                    operand1 = pop();
+                    result = perform_operation(oper, operand1, operand2);
+                    push(result);
+                    c = stack[top - 1] + '0';
+                }
+                break;
+            }
+            sw = false;
+        }
+        else if (c == ' ')
+        {
+            continue;
+        }
+        else
+        {
+            perror("Error: Invalid character\n");
+            return -1;
+        }
+    }
+    result = pop();
+    if (stack[top] == ')')
+    {
+        pop();
+        cnt--;
+    }
+    if (top >= 0)
+    {
+        perror("Error: Invalid expression\n");
+        return -1;
+    }
+    return result;
 }
 
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
