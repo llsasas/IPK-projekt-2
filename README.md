@@ -26,14 +26,14 @@ The testing of the programme was mainly carried out by manual tests. Giving prog
 ### References 
 
 **Handling ctrlc**
-Title: Catch Ctrl-C in C
-Author: Various contributors
-Website: Stack Overflow
+Title: Catch Ctrl-C in C  
+Author: Various contributors  
+Website: Stack Overflow  
 URL: https://stackoverflow.com/questions/4217037/catch-ctrl-c-in-c
 
 **How to solve prefix expression**
-Title: Evaluation of Prefix Expressions
-Author: GeeksforGeeks contributors
-Website: GeeksforGeeks
+Title: Evaluation of Prefix Expressions  
+Author: GeeksforGeeks contributors  
+Website: GeeksforGeeks  
 URL: https://www.geeksforgeeks.org/evaluation-prefix-expressions/
  
