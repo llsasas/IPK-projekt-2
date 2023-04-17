@@ -55,7 +55,7 @@ int is_operator(char ch)
 }
 
 /**
- * @brief Function used for pushing items on the stack 
+ * @brief Function used for pushing items on the stack
  * @param operation what operation will be performed
  * @param operand1 first operand
  * @param operand2 second operand
@@ -78,7 +78,7 @@ int perform_operation(char operation, int operand1, int operand2)
     }
 }
 /**
- * @brief Function used for pushing items on the stack 
+ * @brief Function used for pushing items on the stack
  * @param item item that will be pushed
  * @return void
  */
@@ -150,7 +150,7 @@ int evaluate_prefix_expression(char *expr)
                 }
                 operand2 = pop();
                 operand1 = pop();
-                result = perform_operation(oper, operand1, operand2); // odstranit operátor z vrcholu zásobníku
+                result = perform_operation(oper, operand2, operand1); // odstranit operátor z vrcholu zásobníku
                 if (stack[top] == ')')
                 {
                     pop();
@@ -363,7 +363,7 @@ void listenfnc(int socketn)
  * @param prtnum represents port number
  * @return 0 void
  */
-void tcp_communication(int socketn, int prtnum)
+void tcp_communication(int socketn)
 {
     struct sockaddr_in comm_addr;
     socklen_t comm_addr_size = sizeof(comm_addr);
@@ -378,7 +378,6 @@ void tcp_communication(int socketn, int prtnum)
         int comm_socket = accept(socketn, (struct sockaddr *)&comm_addr, &comm_addr_size);
         if (comm_socket < 0)
         {
-            perror("286");
             error = true;
             break;
         }
@@ -413,7 +412,6 @@ void tcp_communication(int socketn, int prtnum)
                     else if (!strncmp(message, "SOLVE ", 6))
                     {
                         int result = evaluate_prefix_expression(extract_substring(message));
-                        perror("314 ");
                         printf("%d \n", result);
                         if (result == -1)
                         {
@@ -494,13 +492,25 @@ void udp_communication(int socketn)
             error = true;
             break;
         }
-        int result = evaluate_prefix_expression(buff + 3);
-        sprintf(out, "%d\n", result);
-        out[0] = '4';
-        out[1] = '\0';
-        send[0] = 1;
-        send[1] = 0;
-        send[2] = 1;
+        int result = evaluate_prefix_expression(extract_substring(buff));
+        if (result == -1)
+        {
+            memset(&send, 0, sizeof(send));
+            sprintf(out, "Problem with expression");
+            out[1] = '\0';
+            send[0] = 1;
+            send[1] = 1;
+            send[2] = strlen(out);
+        }
+        else
+        {
+            memset(&send, 0, sizeof(send));
+            out[0] = result + '0';
+            out[1] = '\0';
+            send[0] = 1;
+            send[1] = 0;
+            send[2] = strlen(out);
+        }
         strcat(send + 3, out);
         int bytes_tx = sendto(socketn, send, strlen(send), 0, addr, addr_size);
         if (bytes_tx < 0)
@@ -514,7 +524,7 @@ void udp_communication(int socketn)
     {
         exit(EXIT_FAILURE);
     }
-    exit(0)
+    exit(EXIT_SUCCESS);
 }
 
 /**
@@ -525,7 +535,6 @@ void udp_communication(int socketn)
  */
 int main(int argc, const char *argv[])
 {
-    const char *server_hostname;
     int h = 0;
     int p = 0;
     int m = 0;
@@ -533,7 +542,6 @@ int main(int argc, const char *argv[])
     arguments_check(argc, argv, &h, &p, &m);
     int mode = !strcmp(argv[m], "tcp");
     portnumber = atoi(argv[p]);
-    server_hostname = argv[h];
     check_portnumber(portnumber);
     socket_f = create_socket(mode);
     if (socket_f <= 0)
@@ -541,13 +549,18 @@ int main(int argc, const char *argv[])
         perror("Error: socket");
         return (EXIT_FAILURE);
     }
-    if (true)
+    if (mode)
     {
         int enable = 1;
         setsockopt(socket_f, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
         fnc_bind(portnumber, socket_f);
         listenfnc(socket_f);
-        tcp_communication(socket_f, portnumber);
+        tcp_communication(socket_f);
+    }
+    else
+    {
+        fnc_bind(portnumber, socket_f);
+        udp_communication(socket_f);
     }
     return 0;
 }
