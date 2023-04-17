@@ -39,6 +39,24 @@ int is_operator(char ch)
     return 0;
 }
 
+int perform_operation(char operation, int operand1, int operand2)
+{
+    switch (operation)
+    {
+    case '+':
+        return operand1 + operand2;
+    case '-':
+        return operand1 - operand2;
+    case '*':
+        return operand1 * operand2;
+    case '/':
+        return operand1 / operand2;
+    default:
+        printf("Error: Invalid operator\n");
+        exit(0);
+    }
+}
+
 
 void push(int item)
 {
@@ -291,6 +309,7 @@ void udp_communication(int socketn)
     struct sockaddr_in client_addr;
     socklen_t addr_size = sizeof(client_addr);
     struct sockaddr *addr = (struct sockaddr *)&client_addr;
+    bool error false;
     char buff[BUFSIZE];
     char send[BUFSIZE];
     char out[BUFSIZE];
@@ -303,21 +322,21 @@ void udp_communication(int socketn)
             error = true;
             break;
         }
-        if ((bufffer[0]) != 0)
+        if ((buff[0]) != 0)
         {
             perror("Error occurred: response from client");
             error = true;
             break;
         }
         int result = evaluate_prefix_expression(buff + 3);
-        sprintf(response, "RESULT %d\n", result);
+        sprintf(out, "%d\n", result);
         out[0] = '4';
         out[1] = '\0';
         send[0] = 1;
         send[1] = 0;
         send[2] = 1;
-        strcat(sendBuff + 3, outBuff);
-        int bytes_tx = sendto(socketn, buffer, strlen(buffer), 0, addr, addr_size);
+        strcat(send + 3, out);
+        int bytes_tx = sendto(socketn, send, strlen(send), 0, addr, addr_size);
         if (bytes_tx < 0)
         {
             perror("ERROR: sendto");
