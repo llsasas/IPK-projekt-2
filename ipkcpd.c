@@ -199,6 +199,11 @@ int evaluate_prefix_expression(char *expr)
     return result;
 }
 
+/**
+ * @brief Function that extracts the substring from the given string
+ * @param str string that we want to extract the substring from
+ * @return the substring
+ */
 char *extract_substring(char *str)
 {
     char *start = strchr(str, '('); // find the first '(' character
@@ -544,6 +549,5 @@ int main(int argc, const char *argv[])
         listenfnc(socket_f);
         tcp_communication(socket_f, portnumber);
     }
-
     return 0;
 }
