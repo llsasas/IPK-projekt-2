@@ -163,6 +163,22 @@ int evaluate_prefix_expression(char *expr)
     return result;
 }
 
+char *extract_substring(char *str)
+{
+    char *start = strchr(str, '('); // find the first '(' character
+    char *end = strrchr(str, ')');  // find the last ')' character
+    char *result = NULL;
+
+    if (start != NULL && end != NULL)
+    {
+        result = (char *)malloc(end - start + 2); // allocate memory for the result string
+        strncpy(result, start, end - start + 1);  // copy the substring to the result array
+        result[end - start + 1] = '\0';           // add null terminator to the result array
+    }
+
+    return result;
+}
+
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
     bool swp = false;
