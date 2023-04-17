@@ -23,6 +23,21 @@
 int stack[MAX_STACK_SIZE];
 int top = -1;
 
+/**
+ * @brief Function used for handling ctrlc
+ * @param num int value
+ * @return void
+ */
+void handlectrlc(int num)
+{
+    exit(num);
+}
+
+/**
+ * @brief Function used for checking whether it is valid operator
+ * @param ch operator itself
+ * @return 1 if it is correct operator or 0 if it is invalid
+ */
 int is_operator(char ch)
 {
     switch (ch)
@@ -39,6 +54,13 @@ int is_operator(char ch)
     return 0;
 }
 
+/**
+ * @brief Function used for pushing items on the stack 
+ * @param operation what operation will be performed
+ * @param operand1 first operand
+ * @param operand2 second operand
+ * @return void
+ */
 int perform_operation(char operation, int operand1, int operand2)
 {
     switch (operation)
@@ -55,7 +77,11 @@ int perform_operation(char operation, int operand1, int operand2)
         return -1;
     }
 }
-
+/**
+ * @brief Function used for pushing items on the stack 
+ * @param item item that will be pushed
+ * @return void
+ */
 void push(int item)
 {
     if (top >= MAX_STACK_SIZE - 1)
@@ -69,6 +95,10 @@ void push(int item)
     }
 }
 
+/**
+ * @brief Function used for popping items from the stack top
+ * @return void
+ */
 int pop()
 {
     if (top < 0)
@@ -81,6 +111,12 @@ int pop()
         return stack[top--];
     }
 }
+
+/**
+ * @brief Function used for handling expression evaluation for both UDP and TCP
+ * @param expr expression that will be evaluated
+ * @return -1 if error occurs or the result of the exprssion
+ */
 int evaluate_prefix_expression(char *expr)
 {
     int i, operand1, operand2, result, oper;
@@ -179,6 +215,15 @@ char *extract_substring(char *str)
     return result;
 }
 
+/**
+ * @brief Function that checks if arguments are being passed the correct way
+ * @param argn number of arguments that were passed to the 'main' function
+ * @param arga array of arguments that were passed to the 'main' function
+ * @param h pointer used for storing the index of hostname in the argv
+ * @param p pointer used for storing the index of port in the argv
+ * @param m pointer used for storing the index of mode in the argv
+ * @return 0 if everything is okay, 1 if error occurrs during the programme
+ */
 void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
 {
     bool swp = false;
@@ -238,7 +283,11 @@ void arguments_check(int argn, const char *arga[], int *h, int *p, int *m)
     return;
 }
 
-// Type defines whether we use TCP(1) or UDP(0)
+/**
+ * @brief Function used for handling socker creation for both UDP and TCP
+ * @param type defines whether we use TCP(1) or UDP(0)
+ * @return socket number used further in code
+ */
 int create_socket(int type)
 {
     int family = AF_INET;
@@ -254,6 +303,11 @@ int create_socket(int type)
     }
 }
 
+/**
+ * @brief Function used for checking if port is within given range
+ * @param port_n represents port number
+ * @return 0 void
+ */
 void check_portnumber(int port_n)
 {
     if (port_n > 65535 || port_n < 0)
@@ -263,6 +317,12 @@ void check_portnumber(int port_n)
     }
 }
 
+/**
+ * @brief Function used for bind for both TCP and UDP communication
+ * @param socket_n represents socket number
+ * @param prtnum represents port number
+ * @return 0 void
+ */
 void fnc_bind(int prtnum, int socket_n)
 {
     struct sockaddr_in server_addr;
@@ -277,6 +337,11 @@ void fnc_bind(int prtnum, int socket_n)
     }
 }
 
+/**
+ * @brief Function used for handling listen during TCP
+ * @param socketn represents socket number
+ * @return 0 void
+ */
 void listenfnc(int socketn)
 {
     int max_waiting_connections = 1;
@@ -287,9 +352,14 @@ void listenfnc(int socketn)
     }
 }
 
+/**
+ * @brief Function used for handling TCP communication
+ * @param socketn represents socket number
+ * @param prtnum represents port number
+ * @return 0 void
+ */
 void tcp_communication(int socketn, int prtnum)
 {
-    perror("273");
     struct sockaddr_in comm_addr;
     socklen_t comm_addr_size = sizeof(comm_addr);
     bool error = false;
@@ -300,7 +370,6 @@ void tcp_communication(int socketn, int prtnum)
 
     while (true)
     {
-        perror("283");
         int comm_socket = accept(socketn, (struct sockaddr *)&comm_addr, &comm_addr_size);
         if (comm_socket < 0)
         {
@@ -308,7 +377,6 @@ void tcp_communication(int socketn, int prtnum)
             error = true;
             break;
         }
-        perror("290");
         while (true)
         {
             int bytes_rx = recv(comm_socket, buffer, BUFSIZE, flags);
@@ -318,20 +386,17 @@ void tcp_communication(int socketn, int prtnum)
                 error = true;
                 break;
             }
-            perror("298");
 
             buffer_len += bytes_rx;
 
             if (strchr(buffer, '\n') != NULL)
             {
                 // Complete message received
-                perror("302");
                 char *message = strtok(buffer, "\n");
 
                 while (message != NULL)
                 {
                     // Process message
-
                     if (strcmp(message, "HELLO") == 0)
                     {
                         strcpy(response, "HELLO\n");
@@ -371,15 +436,12 @@ void tcp_communication(int socketn, int prtnum)
 
                     break;
                 }
-
-                // Move remaining data to the beginning of buffer
                 if (error)
                 {
                     break;
                 }
             }
         }
-
         shutdown(comm_socket, SHUT_RDWR);
         if (close(comm_socket) < 0)
         {
@@ -392,19 +454,23 @@ void tcp_communication(int socketn, int prtnum)
             break;
         }
     }
-    perror("367");
     if (error)
     {
         exit(EXIT_FAILURE);
     }
 }
 
+/**
+ * @brief Function used for handling UDP communication
+ * @param socketn represents socket number
+ * @return 0 void
+ */
 void udp_communication(int socketn)
 {
     struct sockaddr_in client_addr;
     socklen_t addr_size = sizeof(client_addr);
     struct sockaddr *addr = (struct sockaddr *)&client_addr;
-    bool error false;
+    bool error = false;
     char buff[BUFSIZE];
     char send[BUFSIZE];
     char out[BUFSIZE];
@@ -446,6 +512,12 @@ void udp_communication(int socketn)
     exit(0)
 }
 
+/**
+ * @brief Main function
+ * @param argc number of arguments
+ * @param argv array of arguments
+ * @return 0 if everything is okay, 1 if error occurrs during the programme
+ */
 int main(int argc, const char *argv[])
 {
     const char *server_hostname;
@@ -453,7 +525,6 @@ int main(int argc, const char *argv[])
     int p = 0;
     int m = 0;
     int portnumber, socket_f;
-    perror("396");
     arguments_check(argc, argv, &h, &p, &m);
     int mode = !strcmp(argv[m], "tcp");
     portnumber = atoi(argv[p]);
@@ -467,14 +538,11 @@ int main(int argc, const char *argv[])
     }
     if (true)
     {
-        perror("423");
         int enable = 1;
         setsockopt(socket_f, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
         fnc_bind(portnumber, socket_f);
         listenfnc(socket_f);
-        perror("414");
         tcp_communication(socket_f, portnumber);
-        perror("430");
     }
 
     return 0;
